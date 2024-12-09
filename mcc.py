@@ -18,6 +18,7 @@ class MCC(object):
     def __enter__(self):
         self.serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0)
         self.ex = pexpect.fdpexpect.fdspawn(self.serial)
+        self.ex.send("\n")
         self.determine_state()
         return self
 
@@ -26,7 +27,7 @@ class MCC(object):
 
     def determine_state(self):
         while True:
-            idx = self.ex.expect(["Cmd>", "Debug>", pexpect.TIMEOUT], timeout=1)
+            idx = self.ex.expect_exact(["Cmd>", "Debug>", pexpect.TIMEOUT], timeout=1)
             if idx == 0:
                 logger.info("state:CMD")
                 self.state = MCC.CMD
@@ -41,19 +42,16 @@ class MCC(object):
 
     def to_state(self, state):
         logger.info(f"to_state({state})")
-        if self.state == state:
-            return
-        elif self.state == MCC.CMD and state == MCC.DEBUG:
-            logger.info("cmd -> debug")
-            self.ex.send("debug\n")
-            self.determine_state()
-        elif self.state == MCC.DEBUG and state == MCC.CMD:
-            logger.info("debug -> cmd")
-            self.ex.send("exit\n")
-            self.determine_state()
-        else:
-            self.determine_state()
-            self.to_state(state)
-
-        if self.state != state:
-            raise Exception(f"Failed to transition to {state}")
+        while True:
+            if self.state == state:
+                return
+            elif self.state == MCC.CMD and state == MCC.DEBUG:
+                logger.info("cmd -> debug")
+                self.ex.send("debug\n")
+                self.determine_state()
+            elif self.state == MCC.DEBUG and state == MCC.CMD:
+                logger.info("debug -> cmd")
+                self.ex.send("exit\n")
+                self.determine_state()
+            else:
+                self.determine_state()
