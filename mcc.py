@@ -16,7 +16,7 @@ class MCC(object):
         self.state = None
 
     def __enter__(self):
-        self.serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0)
+        self.serial = serial.Serial('/dev/ttyUSB0', 115200, timeout=0, exclusive=True)
         self.ex = pexpect.fdpexpect.fdspawn(self.serial)
         self.ex.send("\n")
         self.determine_state()
