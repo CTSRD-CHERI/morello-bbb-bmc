@@ -15,10 +15,19 @@ def main():
     with MCC() as mcc:
         mcc.to_state(MCC.DEBUG)
         mcc.ex.send("help\n")
-        idx = mcc.ex.expect(["Debug>", pexpect.TIMEOUT], timeout=1)
-        if idx == 0:
-            board_power = ("VOLTS" in str(mcc.ex.before))
-            print(f"{board_power}")
+        output = ""
+        while True:
+            idx = mcc.ex.expect(["Debug>", pexpect.TIMEOUT], timeout=1)
+            if idx == 0:
+                output += str(mcc.ex.before)
+                if "HELP or ?" in output:
+                    board_power = ("VOLTS" in output)
+                    print(f"{board_power}")
+                    break
+            else:
+                print("ERROR")
+                break
+
         mcc.to_state(MCC.CMD)
 
 
